@@ -1,0 +1,31 @@
+services:
+  mining-service:
+    build:
+      context: ./apps/mining-service
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    environment:
+      - MINING_SERVICE_PORT=4000
+    volumes:
+      - ./apps/mining-service:/app
+    working_dir: /app
+    networks:
+      - mining-network
+  shaping-service:
+    build:
+      context: ./apps/shaping-service
+      dockerfile: Dockerfile
+    ports:
+      - 4001:4001
+    environment:
+      - SHAPING_SERVICE_PORT=4001
+    volumes:
+      - ./apps/shaping-service:/app
+    working_dir: /app
+    networks:
+      - mining-network
+
+networks:
+  mining-network:
+    driver: bridge
