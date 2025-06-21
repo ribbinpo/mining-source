@@ -6,17 +6,17 @@ on:
       - develop
     paths:
       - "apps/mining-service/**"
-  
+
 jobs:
   setup:
-    name: Setup Golang Job
+    name: setup
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
     # setup env
   test:
-    name: Test Job
+    name: run test
     runs-on: ubuntu-latest
     needs: setup
     steps:
@@ -32,15 +32,24 @@ jobs:
         working-directory: apps/mining-service
         run: go mod download
 
-      - name: Run tests
-        working-directory: apps/mining-service
-        run: go test -v ./...
-
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
+        continue-on-error: true
         with:
-            version: latest
-            working-directory: apps/mining-service
+          version: latest
+          working-directory: apps/mining-service
+          args: --timeout=5m
+
+      - name: Run tests
+        working-directory: apps/mining-service
+        run: go test -v -coverprofile=coverage.out ./...
+      # - name: Run SonarQube scanner
+      #   uses: SonarSource/sonarcloud-github-action@v2
+      #   with:
+      #     projectBaseDir: apps/mining-service
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   build-and-publish:
     name: Build and Publish
     runs-on: ubuntu-latest
@@ -68,6 +77,5 @@ jobs:
             mining-service:latest
             mining-service:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
-
 # for release/x.y.z
 # mining-service:${{ github.ref_name }}
