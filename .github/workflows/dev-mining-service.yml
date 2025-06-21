@@ -75,8 +75,8 @@ jobs:
           file: apps/mining-service/Dockerfile
           push: true
           tags: |
-            mining-service:latest
-            mining-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/mining-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/mining-service:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
 # for release/x.y.z
 # mining-service:${{ github.ref_name }}
