@@ -1,4 +1,4 @@
-name: Dev - Mining Service
+name: Dev Mining Service
 
 on:
   push:
