@@ -1,0 +1,103 @@
+name: PR to Develop
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.txt"
+      - "**/*.json"
+      - "**/*.toml"
+      - "**/*.sh"
+      - "**/*.gitignore"
+      - "**/*.dockerignore"
+      - "**/*.dockerfile"
+      - "**/*.docker-compose.yaml"
+      - "**/*.docker-compose.yml"
+      - "README.md"
+      - "Makefile"
+
+jobs:
+  check-changes-to-mining-service:
+    runs-on: ubuntu-latest
+    outputs:
+      mining-service-changed: ${{ steps.filter-mining-service.outputs.any_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check if mining service changed
+        id: filter-mining-service
+        run: |
+          echo "Checking changes for mining service..."
+          git fetch origin develop --depth=1
+          changed=$(git diff --name-only origin/develop...HEAD | grep -q "apps/mining-service" && echo "true" || echo "false")
+          echo "Changed files: ${changed}"
+          echo "any_changed=${changed}" >> $GITHUB_OUTPUT
+  check-changes-to-shaping-service:
+    runs-on: ubuntu-latest
+    outputs:
+      shaping-service-changed: ${{ steps.filter-shaping-service.outputs.any_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check if shaping service changed
+        id: filter-shaping-service
+        run: |
+          echo "Checking changes for shaping service..."
+          git fetch origin develop --depth=1
+          changed=$(git diff --name-only origin/develop...HEAD | grep -q "apps/shaping-service" && echo "true" || echo "false")
+          echo "Changed files: ${changed}"
+          echo "any_changed=${changed}" >> $GITHUB_OUTPUT
+  test-mining-service:
+    name: Mining Service
+    runs-on: ubuntu-latest
+    needs: check-changes-to-mining-service
+    if: needs.check-changes-to-mining-service.outputs.mining-service-changed == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.23.4
+      - name: Install dependencies
+        # working-directory: ...
+        run: |
+          make install-mining-service
+      - name: Run unit test
+        working-directory: apps/mining-service
+        run: |
+          mkdir -p coverage
+          go test -coverprofile=coverage/coverage.out -covermode=atomic ./...
+          go tool cover -html=coverage/coverage.out -o coverage/coverage.html
+      - name: Publish coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/coverage.html
+  test-shaping-service:
+    name: Shaping Service
+    runs-on: ubuntu-latest
+    needs: check-changes-to-shaping-service
+    if: needs.check-changes-to-shaping-service.outputs.shaping-service-changed == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+      - name: Install dependencies
+        run: |
+          make install-shaping-service
+      - name: Run unit test
+        working-directory: apps/shaping-service
+        run: |
+          mkdir -p coverage
+          uv run pytest --cov=apps/shaping-service --cov-report=html
+      - name: Publish coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/coverage.html
