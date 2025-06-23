@@ -1,3 +1,5 @@
+.vscode/
+
 # Python
 ## env
 .venv
@@ -5,3 +7,9 @@
 # Go
 ## env
 .env
+
+# Infra
+infra/key/
+
+# Ansible
+.lock
