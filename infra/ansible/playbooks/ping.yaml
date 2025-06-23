@@ -1,0 +1,6 @@
+- name: Ping Pong
+  hosts: vm
+  gather_facts: false
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
