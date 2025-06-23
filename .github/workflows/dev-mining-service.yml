@@ -8,6 +8,10 @@ on:
       - "apps/mining-service/**"
   workflow_dispatch:
 
+defaults:
+  run:
+    working-directory: apps/mining-service
+
 jobs:
   setup:
     name: setup
@@ -30,7 +34,6 @@ jobs:
           go-version: 1.23.x
 
       - name: Download dependencies
-        working-directory: apps/mining-service
         run: go mod download
 
       - name: Run linter
@@ -38,7 +41,6 @@ jobs:
         continue-on-error: true
         with:
           version: latest
-          working-directory: apps/mining-service
           args: --timeout=5m
 
       - name: Run tests
@@ -65,14 +67,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v2
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build and Push
         uses: docker/build-push-action@v6
         with:
-          context: apps/mining-service
-          file: apps/mining-service/Dockerfile
+          context: .
+          file: Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/mining-service:latest
