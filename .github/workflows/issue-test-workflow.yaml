@@ -1,0 +1,34 @@
+name: Issue Test Workflow
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run test
+        run: |
+          echo "Hello, ${{ github.event.issue.title }}!"
+          echo "Name: ${{ github.event.issue.body.name }}"
+          echo "Age: ${{ github.event.issue.body.age }}"
+          echo "Gender: ${{ github.event.issue.body.gender }}"
+          echo "Message: ${{ github.event.issue.body.message }}"
+  comment:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run test
+        run: |
+          echo "Hello, ${{ github.event.issue.title }}!"
+          echo "Comment: ${{ github.event.comment.body }}"

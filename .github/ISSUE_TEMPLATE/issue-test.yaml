@@ -1,0 +1,42 @@
+name: Issue Test
+description: Test issue template
+title: "issue-test"
+labels: [automation, test]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a test issue template.
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: What is your name?
+      placeholder: e.g., John Doe
+    validations:
+      required: true
+  - type: input
+    id: age
+    attributes:
+      label: Age
+      description: How old are you?
+      placeholder: e.g., 25
+    validations:
+      required: true
+  - type: checkboxes
+    id: gender
+    attributes:
+      label: Gender
+      description: What is your gender?
+      options:
+        - label: Male
+        - label: Female
+        - label: Other
+  - type: textarea
+    id: message
+    attributes:
+      label: Message
+      description: What is your message?
+      placeholder: e.g., Hello, world!
+    validations:
+      required: true
