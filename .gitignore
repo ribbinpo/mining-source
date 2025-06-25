@@ -10,6 +10,8 @@
 
 # Infra
 infra/key/
+.ansible/
 
-# Ansible
-.lock
+.terraform.lock.hcl
+.terraform/
+terraform.tfstate*
