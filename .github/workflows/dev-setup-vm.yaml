@@ -1,0 +1,76 @@
+name: Provision VM & Setup VM (Develop)
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - infra/*
+      # - .github/workflows/dev-setup-vm.yaml
+
+defaults:
+  run:
+    working-directory: infra
+
+jobs:
+  provision:
+    name: Provision VM
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve \
+          -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY }}" \
+          -var="aws_secret_key=${{ secrets.AWS_SECRET_KEY }}" \
+          -var="key_name=${{ vars.AWS_KEY_NAME }}"
+
+      - name: Save VM IP
+        working-directory: infra/terraform
+        run: |
+          mkdir -p ../ansible/inventories
+          VM_IP=$(terraform output -raw public_ip)
+          cat > ../ansible/inventories/hosts.ini << EOF
+          [all]
+          vm ansible_host=$VM_IP ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+          EOF
+
+  configure:
+    name: Configure VM
+    runs-on: ubuntu-latest
+    needs: provision
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Add SSH Private Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i infra/ansible/inventories/hosts.ini infra/ansible/playbooks/setup-docker.yml
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
