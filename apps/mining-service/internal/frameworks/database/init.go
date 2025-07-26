@@ -19,5 +19,9 @@ func (d *Database) Connect() *gorm.DB {
 		panic(err)
 	}
 
+	if err := RunMigration(db); err != nil {
+		panic(err)
+	}
+
 	return db
 }
