@@ -1,12 +1,46 @@
 package database
 
-import "github.com/ribbinpo/mining-service/internal/application/domain"
+import (
+	"net/url"
+	"strings"
+
+	"github.com/ribbinpo/mining-service/internal/application/domain"
+)
+
+// extractPathFromURL extracts the path portion from a full URL
+// Example: "https://example.com/path/to/page" -> "/path/to/page"
+func extractPathFromURL(fullURL string) string {
+	// If it's already a path (starts with /), return as is
+	if strings.HasPrefix(fullURL, "/") {
+		return fullURL
+	}
+
+	// Try to parse as URL and extract path
+	parsedURL, err := url.Parse(fullURL)
+	if err != nil {
+		// If parsing fails, return the original string
+		return fullURL
+	}
+
+	// Return the path portion
+	path := parsedURL.Path
+	if parsedURL.RawQuery != "" {
+		path += "?" + parsedURL.RawQuery
+	}
+	if parsedURL.Fragment != "" {
+		path += "#" + parsedURL.Fragment
+	}
+
+	return path
+}
 
 func StoneDomainToModel(domain *domain.StoneDomain) *StoneModel {
 	paths := make([]PathModel, len(domain.Paths))
 	for i, path := range domain.Paths {
+		// Extract only the path portion from full URLs
+		pathOnly := extractPathFromURL(path)
 		paths[i] = PathModel{
-			Name: path,
+			Name: pathOnly,
 		}
 	}
 	return &StoneModel{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/ribbinpo/mining-service/internal/application/domain"
 	"github.com/ribbinpo/mining-service/internal/application/port"
 	model "github.com/ribbinpo/mining-service/internal/frameworks/database/model"
@@ -60,7 +61,7 @@ func (r *stoneRepository) GetAllStones(options *port.GetAllStonesOptions) ([]*do
 
 	// Apply pagination
 	if options.PageSize > 0 {
-		query = query.Limit(options.PageSize).Offset(options.Page * options.PageSize)
+		query = query.Limit(options.PageSize).Offset((options.Page * options.PageSize) - 1)
 	}
 
 	var stones []model.StoneModel
@@ -92,18 +93,69 @@ func (r *stoneRepository) UpdateStone(stone *domain.StoneDomain) error {
 	ctx := context.Background()
 	stoneModel := model.StoneDomainToModel(stone)
 
-	// Use Updates to update only non-zero fields
-	result := r.db.WithContext(ctx).Model(&model.StoneModel{}).Where("id = ?", stone.ID).Updates(stoneModel)
+	// Start a transaction to ensure data consistency
+	tx := r.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 1. Update the main stone fields
+	result := tx.Model(&model.StoneModel{}).Where("id = ?", stone.ID).Updates(stoneModel)
 	if result.Error != nil {
+		tx.Rollback()
 		return result.Error
 	}
 
 	// Check if any rows were affected
 	if result.RowsAffected == 0 {
+		tx.Rollback()
 		return errors.New("stone not found")
 	}
 
-	return nil
+	// 2. Handle paths - ensure unique paths in the paths table
+	for i := range stoneModel.Paths {
+		// Try to find existing path by name
+		var existingPath model.PathModel
+		err := tx.Where("name = ?", stoneModel.Paths[i].Name).First(&existingPath).Error
+
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// Path doesn't exist, create new one
+				stoneModel.Paths[i].ID = uuid.New().String()
+				if err := tx.Create(&stoneModel.Paths[i]).Error; err != nil {
+					tx.Rollback()
+					return err
+				}
+			} else {
+				tx.Rollback()
+				return err
+			}
+		} else {
+			// Path exists, use the existing path ID
+			stoneModel.Paths[i].ID = existingPath.ID
+		}
+	}
+
+	// 3. Get the existing stone to access its associations
+	var existingStone model.StoneModel
+	if err := tx.Where("id = ?", stone.ID).First(&existingStone).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 4. Replace the paths association (this handles stone_paths table)
+	if err := tx.Model(&existingStone).Association("Paths").Replace(stoneModel.Paths); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Commit the transaction
+	return tx.Commit().Error
 }
 
 func (r *stoneRepository) DeleteStone(id string) error {

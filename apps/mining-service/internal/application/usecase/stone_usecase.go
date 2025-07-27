@@ -84,7 +84,20 @@ func (u *stoneUsecase) ExecuteDigFromQueue() error {
 
 	stone := stones[0]
 
-	u.ExecuteDig(stone.DomainURL)
+	stonePaths, err := u.ExecuteDig(stone.DomainURL)
+
+	if err != nil {
+		return err
+	}
+
+	for _, stonePath := range stonePaths {
+		fmt.Println(stonePath)
+	}
+
+	stone.Paths = stonePaths
+	stone.Status = domain.StoneStatusEnumCompleted
+
+	u.stoneRepository.UpdateStone(stone)
 
 	return nil
 }
@@ -141,16 +154,14 @@ func (u *stoneUsecase) ExecuteDig(targetURL string) ([]string, error) {
 		close(queueURLs) // All URLs added, safe to close
 	}()
 
+	// Wait for workers to finish
+	wg.Wait()
+
 	// Print all visited URLs
-	mutex.Lock()
 	visitedURLs := make([]string, 0, len(visited))
 	for url := range visited {
 		visitedURLs = append(visitedURLs, url)
 	}
-	mutex.Unlock()
-
-	// Wait for workers to finish
-	wg.Wait()
 
 	return visitedURLs, nil
 }
