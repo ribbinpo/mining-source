@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -39,11 +40,11 @@ func (u *stoneUsecase) RegisterDig(url string, refresh bool) error {
 	if stone != nil {
 		if stone.Status == domain.StoneStatusEnumPending {
 			// throw error - stone is pending
-			return nil
+			return errors.New("stone is pending")
 		}
 		if !refresh {
 			// throw error - stone already exists
-			return nil
+			return errors.New("stone already exists")
 		} else {
 			// update stone
 			stone.Retry()
@@ -51,7 +52,7 @@ func (u *stoneUsecase) RegisterDig(url string, refresh bool) error {
 			if err != nil {
 				return err
 			}
-			return nil
+			return errors.New("stone already exists")
 		}
 	}
 

@@ -29,8 +29,8 @@ func (p *PathModel) TableName() string {
 	return "paths"
 }
 
-func (s *StoneModel) CreateNew() StoneModel {
-	return StoneModel{
+func (s *StoneModel) CreateNew() *StoneModel {
+	return &StoneModel{
 		ID:      uuid.New().String(),
 		Domain:  s.Domain,
 		Status:  "pending",

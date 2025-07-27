@@ -34,7 +34,7 @@ func (r *stoneRepository) GetStoneByID(id string) (*domain.StoneDomain, error) {
 func (r *stoneRepository) CreateStone(stone *domain.StoneDomain) error {
 	stoneModel := model.StoneDomainToModel(stone)
 	ctx := context.Background()
-	if err := r.db.WithContext(ctx).Create(stoneModel).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(stoneModel.CreateNew()).Error; err != nil {
 		return err
 	}
 	return nil
