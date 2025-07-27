@@ -174,6 +174,15 @@ func shouldIncludeURL(urlStr string, baseURL *url.URL, sameDomainOnly, includeSu
 		return false
 	}
 
+	// Check if URL contains /. which could indicate directory traversal
+	if strings.Contains(parsedURL.Path, "/.") {
+		return false
+	}
+
+	if strings.Contains(parsedURL.Path, "#") {
+		return false
+	}
+
 	// Check if it's from the same domain (if sameDomainOnly is true)
 	if sameDomainOnly {
 		return util.IsSameDomain(parsedURL, baseURL, includeSubdomains)
