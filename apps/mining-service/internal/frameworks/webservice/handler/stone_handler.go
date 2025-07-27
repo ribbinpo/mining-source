@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/ribbinpo/mining-service/internal/application/port"
+	"github.com/ribbinpo/mining-service/internal/util"
 )
 
 type StoneHandler struct {
@@ -37,7 +38,17 @@ func (h *StoneHandler) RegisterDig(c *fiber.Ctx) error {
 }
 
 func (h *StoneHandler) GetStoneByURL(c *fiber.Ctx) error {
-	stone, err := h.StoneUsecase.GetStoneByURL(c.Params("url"))
+	encodedURL := c.Params("url")
+
+	// Decode the URL parameter
+	decodedURL, err := util.DecodeURL(encodedURL)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid URL encoding: " + err.Error(),
+		})
+	}
+
+	stone, err := h.StoneUsecase.GetStoneByURL(decodedURL)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

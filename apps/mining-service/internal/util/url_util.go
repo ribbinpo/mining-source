@@ -8,6 +8,12 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
+// DecodeURL decodes a URL-encoded string
+// Example: "https%3A%2F%2Fgoogle.com" -> "https://google.com"
+func DecodeURL(encodedURL string) (string, error) {
+	return url.QueryUnescape(encodedURL)
+}
+
 func ExtractBaseDomain(host string) string {
 	// Remove port if present
 	if colonIndex := strings.Index(host, ":"); colonIndex != -1 {
