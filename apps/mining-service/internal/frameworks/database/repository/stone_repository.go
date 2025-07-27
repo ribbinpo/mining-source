@@ -119,25 +119,25 @@ func (r *stoneRepository) UpdateStone(stone *domain.StoneDomain) error {
 
 	// 2. Handle paths - ensure unique paths in the paths table
 	for i := range stoneModel.Paths {
-		// Try to find existing path by name
-		var existingPath model.PathModel
-		err := tx.Where("name = ?", stoneModel.Paths[i].Name).First(&existingPath).Error
+		// Try to find existing path by name using Find() to avoid error logging
+		var existingPaths []model.PathModel
+		result := tx.Where("name = ?", stoneModel.Paths[i].Name).Limit(1).Find(&existingPaths)
 
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// Path doesn't exist, create new one
-				stoneModel.Paths[i].ID = uuid.New().String()
-				if err := tx.Create(&stoneModel.Paths[i]).Error; err != nil {
-					tx.Rollback()
-					return err
-				}
-			} else {
+		if result.Error != nil {
+			tx.Rollback()
+			return result.Error
+		}
+
+		if len(existingPaths) == 0 {
+			// Path doesn't exist, create new one
+			stoneModel.Paths[i].ID = uuid.New().String()
+			if err := tx.Create(&stoneModel.Paths[i]).Error; err != nil {
 				tx.Rollback()
 				return err
 			}
 		} else {
 			// Path exists, use the existing path ID
-			stoneModel.Paths[i].ID = existingPath.ID
+			stoneModel.Paths[i].ID = existingPaths[0].ID
 		}
 	}
 
