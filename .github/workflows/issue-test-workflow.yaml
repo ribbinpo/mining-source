@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'issues'
+    if: github.event_name == 'issues' && github.event.issue.title == 'issue-test'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
           echo "Message: ${{ github.event.issue.body.message }}"
   comment:
     runs-on: ubuntu-latest
-    if: github.event_name == 'issue_comment'
+    if: github.event_name == 'issue_comment' && github.event.issue.title == 'issue-test'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

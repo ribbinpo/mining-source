@@ -1,11 +1,11 @@
 name: Dev Mining Service
 
 on:
-  push:
-    branches:
-      - develop
-    paths:
-      - "apps/mining-service/**"
+  # push:
+  #   branches:
+  #     - develop
+  #   paths:
+  #     - "apps/mining-service/**"
   workflow_dispatch:
 
 defaults:
