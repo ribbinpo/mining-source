@@ -1,4 +1,5 @@
 .vscode/
+.DS_Store
 
 # Python
 ## env
@@ -8,10 +9,3 @@
 ## env
 .env
 
-# Infra
-infra/key/
-.ansible/
-
-.terraform.lock.hcl
-.terraform/
-terraform.tfstate*
